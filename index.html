@@ -6,6 +6,63 @@
 <title>Anime Tracker - Accueil</title>
 <link rel="stylesheet" href="style.css">
 </head>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+import { getFirestore, doc, setDoc, getDoc, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDWbsbfnF5e-E3rCMguVFF69PpAM-ZlAZ4",
+  authDomain: "anime-lo.firebaseapp.com",
+  projectId: "anime-lo",
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+// --- CREATION DE COMPTE ---
+async function register(email, password) {
+  await createUserWithEmailAndPassword(auth, email, password);
+
+  // créer doc utilisateur
+  await setDoc(doc(db, "users", auth.currentUser.uid), {
+    favoris: [],
+    liste: [],
+    parametres: {}
+  });
+
+  alert("Compte créé !");
+}
+
+// --- CONNEXION ---
+async function login(email, password) {
+  await signInWithEmailAndPassword(auth, email, password);
+  alert("Connecté !");
+}
+
+// --- DECONNEXION ---
+async function logout() {
+  await signOut(auth);
+  alert("Déconnecté");
+}
+
+// --- AJOUT FAVORI ---
+async function addFavori(anime) {
+  const ref = doc(db, "users", auth.currentUser.uid);
+  await updateDoc(ref, {
+    favoris: arrayUnion(anime)
+  });
+}
+
+// --- RECUPERATION DES DONNEES ---
+async function loadUserData() {
+  const ref = doc(db, "users", auth.currentUser.uid);
+  const snap = await getDoc(ref);
+  console.log("Données :", snap.data());
+}
+</script>
+
 <body>
 
 <header>
@@ -34,5 +91,16 @@
 </main>
 
 <script src="site.js"></script>
+<input id="email" placeholder="email">
+<input id="pass" type="password" placeholder="mot de passe">
+<button onclick="register(email.value, pass.value)">Créer un compte</button>
+<button onclick="login(email.value, pass.value)">Connexion</button>
+<button onclick="logout()">Déconnexion</button>
+
+<input id="anime" placeholder="Nom anime">
+<button onclick="addFavori(anime.value)">Ajouter aux favoris</button>
+
+<button onclick="loadUserData()">Voir mes données</button>
+
 </body>
 </html>

@@ -1,51 +1,73 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Anime Tracker - Profils</title>
-<link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anime Tracker - Profils</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <header>
-    <h1>🎌 Anime Tracker</h1>
+    <div>
+        <h1>🎬 Anime Tracker</h1>
+    </div>
     <nav>
-        <a href="index.html">Accueil</a> |
-        <a href="profiles.html">Profils</a> |
-        <a href="add.html">Ajouter animé</a> |
-        <a href="list.html">Liste animés</a> |
+        <a href="index.html">Accueil</a>
+        <a href="add.html">Ajouter</a>
+        <a href="list.html">Ma Bibliothèque</a>
         <a href="about.html">À propos</a>
     </nav>
+    <div class="header-right">
+        <div class="auth-icon" onclick="window.openAuthModal()" id="authIcon">👤</div>
+    </div>
 </header>
 
 <main>
 <section>
-<h2>👥 Profils</h2>
-
-<div style="display:flex;gap:10px;align-items:center;margin-bottom:10px;">
-    <select id="profileSelect" onchange="switchProfile(this.value)"></select>
-    <button onclick="addProfile()">➕ Ajouter</button>
-    <button onclick="deleteProfile()">🗑️ Supprimer</button>
-</div>
-
-<div style="display:flex;gap:15px;align-items:center;margin-bottom:10px;">
-    <img id="profileAvatar" src="" style="width:90px;height:90px;border-radius:50%;object-fit:cover">
-    <div>
-        <strong id="profileName"></strong><br>
-        <span class="small" id="profileBio"></span>
+    <h2>👥 Gestion des Profils</h2>
+    
+    <div class="form-group">
+        <label for="profileSelect">Sélectionner un profil</label>
+        <select id="profileSelect" onchange="switchProfile(this.value)"></select>
     </div>
-</div>
 
-<hr style="margin:15px 0;border-color:#333">
+    <div style="display: grid; grid-template-columns: auto 1fr; gap: 20px; margin: 24px 0;">
+        <div style="text-align: center;">
+            <img id="profileAvatar" src="https://via.placeholder.com/100" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover;">
+        </div>
+        <div>
+            <h3 id="profileName" style="margin: 0 0 8px 0;">Profil</h3>
+            <p id="profileBio" style="margin: 0; color: var(--text-muted);">-</p>
+        </div>
+    </div>
 
-<input id="profileNameInput" placeholder="Nom du profil">
-<input id="profileAvatarInput" placeholder="URL de l’avatar">
-<textarea id="profileBioInput" placeholder="Bio"></textarea>
-<button onclick="saveProfile()">Sauvegarder le profil</button>
+    <h3>Éditer le profil</h3>
+
+    <div class="form-group">
+        <label for="profileNameInput">Nom</label>
+        <input id="profileNameInput" type="text">
+    </div>
+
+    <div class="form-group">
+        <label for="profileAvatarInput">Avatar (URL)</label>
+        <input id="profileAvatarInput" type="url">
+    </div>
+
+    <div class="form-group">
+        <label for="profileBioInput">Bio</label>
+        <textarea id="profileBioInput" placeholder="Parlez un peu de vous..."></textarea>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-top: 20px;">
+        <button class="btn-primary" onclick="saveProfile()">💾 Sauvegarder</button>
+        <button class="btn-secondary" onclick="addProfile()">➕ Nouveau profil</button>
+        <button class="btn-danger" onclick="deleteProfile()">🗑️ Supprimer</button>
+    </div>
 </section>
 </main>
 
 <script src="site.js"></script>
+
 </body>
 </html>

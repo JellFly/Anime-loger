@@ -1,30 +1,66 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Anime Tracker - À propos</title>
-<link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anime Tracker - À propos</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
 <header>
-    <h1>🎌 Anime Tracker</h1>
+    <div>
+        <h1>🎬 Anime Tracker</h1>
+    </div>
     <nav>
-        <a href="index.html">Accueil</a> |
-        <a href="profiles.html">Profils</a> |
-        <a href="add.html">Ajouter animé</a> |
-        <a href="list.html">Liste animés</a> |
+        <a href="index.html">Accueil</a>
+        <a href="add.html">Ajouter</a>
+        <a href="list.html">Ma Bibliothèque</a>
         <a href="about.html">À propos</a>
     </nav>
+    <div class="header-right">
+        <div class="auth-icon" onclick="window.openAuthModal()" id="authIcon">👤</div>
+    </div>
 </header>
 
 <main>
 <section>
-<h2>ℹ️ À propos</h2>
-<p>Anime Tracker est un projet personnel pour suivre vos animés et gérer plusieurs profils.  
-Tout est stocké localement dans votre navigateur.</p>
-<p>Développé avec ❤️ par toi.</p>
+    <h2>📖 À propos d'Anime Tracker</h2>
+    <p>Anime Tracker est une application web moderne pour organiser et suivre vos animés, films et séries préférés.</p>
+
+    <h3>✨ Fonctionnalités</h3>
+    <ul style="color: var(--text-muted);">
+        <li>📊 Suivez vos animés, films et séries en un seul endroit</li>
+        <li>⭐ Notez et commentez vos titres préférés</li>
+        <li>📅 Gardez une trace de vos dates de visionnage</li>
+        <li>⏳ Gérez votre watchlist personnelle</li>
+        <li>☁️ Synchronisation en temps réel avec Firebase</li>
+        <li>🔐 Connexion sécurisée à votre compte</li>
+        <li>🎨 Interface moderne et intuitive</li>
+    </ul>
+
+    <h3>🚀 Technologie</h3>
+    <p>Anime Tracker est construit avec:</p>
+    <ul style="color: var(--text-muted);">
+        <li><strong>Frontend:</strong> HTML, CSS, JavaScript vanilla</li>
+        <li><strong>Backend:</strong> Firebase (Authentication + Firestore)</li>
+        <li><strong>Design:</strong> Interface responsive et moderne</li>
+    </ul>
+
+    <h3>💡 Conseils d'utilisation</h3>
+    <ul style="color: var(--text-muted);">
+        <li>Créez un compte pour synchroniser vos données entre appareils</li>
+        <li>Utilisez les onglets "Animés", "Films" et "Séries" pour organiser votre bibliothèque</li>
+        <li>Notez vos titres pour garder une trace de vos avis</li>
+        <li>Utilisez la watchlist pour les titres que vous voulez regarder bientôt</li>
+    </ul>
+
+    <h3>🤝 Support</h3>
+    <p>Pour toute question ou suggestion, n'hésitez pas à nous contacter!</p>
 </section>
 </main>
+
+<script src="site.js"></script>
+
 </body>
 </html>

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Anime Tracker - Liste</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+    <h1>🎌 Anime Tracker</h1>
+    <nav>
+        <a href="index.html">Accueil</a> |
+        <a href="profiles.html">Profils</a> |
+        <a href="add.html">Ajouter animé</a> |
+        <a href="list.html">Liste animés</a> |
+        <a href="about.html">À propos</a>
+    </nav>
+</header>
+
+<main>
+<section>
+<h2>🔍 Recherche & Tri</h2>
+<input id="search" placeholder="Rechercher un animé..." oninput="render()">
+<select onchange="sortAnime(this.value)">
+<option value="">-- Trier par --</option>
+<option value="name">Nom</option>
+<option value="rating">Note</option>
+<option value="date">Date</option>
+</select>
+</section>
+
+<section>
+<h2>📺 Animés regardés</h2>
+<div class="grid" id="animeList"></div>
+</section>
+
+<section>
+<h2>⏳ Watchlist</h2>
+<input id="watchInput" placeholder="Animé à regarder">
+<button onclick="addWatch()">Ajouter</button>
+<div class="grid" id="watchList"></div>
+</section>
+</main>
+
+<script src="site.js"></script>
+</body>
+</html>

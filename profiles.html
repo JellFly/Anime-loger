@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Anime Tracker - Profils</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+    <h1>🎌 Anime Tracker</h1>
+    <nav>
+        <a href="index.html">Accueil</a> |
+        <a href="profiles.html">Profils</a> |
+        <a href="add.html">Ajouter animé</a> |
+        <a href="list.html">Liste animés</a> |
+        <a href="about.html">À propos</a>
+    </nav>
+</header>
+
+<main>
+<section>
+<h2>👥 Profils</h2>
+
+<div style="display:flex;gap:10px;align-items:center;margin-bottom:10px;">
+    <select id="profileSelect" onchange="switchProfile(this.value)"></select>
+    <button onclick="addProfile()">➕ Ajouter</button>
+    <button onclick="deleteProfile()">🗑️ Supprimer</button>
+</div>
+
+<div style="display:flex;gap:15px;align-items:center;margin-bottom:10px;">
+    <img id="profileAvatar" src="" style="width:90px;height:90px;border-radius:50%;object-fit:cover">
+    <div>
+        <strong id="profileName"></strong><br>
+        <span class="small" id="profileBio"></span>
+    </div>
+</div>
+
+<hr style="margin:15px 0;border-color:#333">
+
+<input id="profileNameInput" placeholder="Nom du profil">
+<input id="profileAvatarInput" placeholder="URL de l’avatar">
+<textarea id="profileBioInput" placeholder="Bio"></textarea>
+<button onclick="saveProfile()">Sauvegarder le profil</button>
+</section>
+</main>
+
+<script src="site.js"></script>
+</body>
+</html>

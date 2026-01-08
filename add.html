@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Anime Tracker - Ajouter</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+    <h1>🎌 Anime Tracker</h1>
+    <nav>
+        <a href="index.html">Accueil</a> |
+        <a href="profiles.html">Profils</a> |
+        <a href="add.html">Ajouter animé</a> |
+        <a href="list.html">Liste animés</a> |
+        <a href="about.html">À propos</a>
+    </nav>
+</header>
+
+<main>
+<section>
+<h2>➕ Ajouter un animé</h2>
+<input id="title" placeholder="Nom de l'animé">
+<input id="image" placeholder="URL de l'image">
+<select id="rating">
+<option value="1">⭐</option>
+<option value="2">⭐⭐</option>
+<option value="3">⭐⭐⭐</option>
+<option value="4">⭐⭐⭐⭐</option>
+<option value="5">⭐⭐⭐⭐⭐</option>
+</select>
+<input type="date" id="date">
+<textarea id="comment" placeholder="Ton avis"></textarea>
+<button onclick="saveAnime()">Sauvegarder</button>
+</section>
+</main>
+
+<script src="site.js"></script>
+</body>
+</html>

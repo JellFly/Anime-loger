@@ -350,6 +350,14 @@ async function watchToAnime(i) {
     render();
 }
 
+async function deleteFromWatch(i) {
+    if(confirm("Supprimer de la watchlist ?")) {
+        watch.splice(i, 1);
+        await saveData();
+        render();
+    }
+}
+
 /* ===== SORT ===== */
 function sortItems(type) {
     const currentList = currentType === "animes" ? animes : currentType === "films" ? films : series;
@@ -476,13 +484,28 @@ function render() {
     if(watchListEl) {
         watchListEl.innerHTML = watch.map((w,i) => `
             <div class="card">
-                <div class="card-content">
-                    <div class="card-title">${w}</div>
+                <div style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); padding: 30px; text-align: center; color: white; border-radius: 12px 12px 0 0;">
+                    <div style="font-size: 48px; margin-bottom: 12px;">⏳</div>
+                    <div style="font-size: 16px; font-weight: 600;">${w}</div>
+                </div>
+                <div class="card-content" style="text-align: center;">
+                    <p style="color: var(--text-muted); font-size: 13px; margin: 12px 0;">En attente de visionnage</p>
                     <div class="card-actions">
-                        <button class="btn-small" onclick="watchToAnime(${i})">✔️ Ajouter</button>
+                        <button class="btn-small" onclick="watchToAnime(${i})">✔️ Regardé</button>
+                        <button class="btn-small btn-danger" onclick="deleteFromWatch(${i})">🗑️ Supprimer</button>
                     </div>
                 </div>
             </div>`).join("");
+        
+        // Afficher/masquer le message vide
+        const emptyWatch = document.getElementById("emptyWatch");
+        if(emptyWatch) {
+            emptyWatch.style.display = watch.length === 0 ? "block" : "none";
+        }
+        
+        // Mettre à jour le compteur
+        const countWatch = document.getElementById("countWatch");
+        if(countWatch) countWatch.textContent = watch.length;
     }
 
     updateStats();

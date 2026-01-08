@@ -2,6 +2,8 @@
 let profiles = [];
 let currentProfileIndex = 0;
 let currentType = "animes"; // animes, films, series
+let filterType = "tout"; // tout, animes, films, series
+let sortBy = "date_new"; // date_new, date_old, rating_high, rating_low, name
 
 let animes = [];
 let films = [];
@@ -114,6 +116,22 @@ window.switchType = function(type) {
         films = p.films || [];
         series = p.series || [];
     }
+    
+    render();
+};
+
+window.switchFilterType = function(type) {
+    filterType = type;
+    
+    // Update buttons
+    document.querySelectorAll(".type-tabs .tab-btn").forEach(btn => {
+        btn.classList.remove("active");
+        if(btn.dataset.type === type) btn.classList.add("active");
+    });
+    
+    // Update select
+    const select = document.getElementById("filterType");
+    if(select) select.value = type;
     
     render();
 };
@@ -254,14 +272,19 @@ async function saveItem() {
         comment: commentEl ? commentEl.value : ""
     };
     
-    const currentList = currentType === "animes" ? animes : currentType === "films" ? films : series;
+    // Déterminer le type à utiliser (edit type ou current type)
+    const typeToUse = window.editingType || currentType;
+    const currentList = typeToUse === "animes" ? animes : typeToUse === "films" ? films : series;
     
     if(editIndex === null) {
         currentList.push(item);
     } else {
         currentList[editIndex] = item;
     }
+    
     editIndex = null;
+    window.editingType = null;
+    window.editingIndex = null;
 
     if(titleEl) titleEl.value = "";
     if(imageEl) imageEl.value = "";
@@ -273,27 +296,36 @@ async function saveItem() {
     render();
 }
 
-function editItem(i) {
+function editItem(i, typeParam = null) {
     const titleEl = document.getElementById("title");
     const imageEl = document.getElementById("image");
     const ratingEl = document.getElementById("rating");
     const dateEl = document.getElementById("date");
     const commentEl = document.getElementById("comment");
     
-    const currentList = currentType === "animes" ? animes : currentType === "films" ? films : series;
+    // Déterminer le type à utiliser
+    const type = typeParam || currentType;
+    const currentList = type === "animes" ? animes : type === "films" ? films : series;
     const item = currentList[i];
+    
+    if(!item) return;
     
     if(titleEl) titleEl.value = item.title;
     if(imageEl) imageEl.value = item.image;
     if(ratingEl) ratingEl.value = item.rating;
     if(dateEl) dateEl.value = item.date;
     if(commentEl) commentEl.value = item.comment;
+    
+    // Sauvegarder le type et l'index pour la sauvegarde
+    window.editingType = type;
+    window.editingIndex = i;
     editIndex = i;
 }
 
-async function deleteItem(i) {
+async function deleteItem(i, typeParam = null) {
     if(confirm("Supprimer cet élément ?")) {
-        const currentList = currentType === "animes" ? animes : currentType === "films" ? films : series;
+        const type = typeParam || currentType;
+        const currentList = type === "animes" ? animes : type === "films" ? films : series;
         currentList.splice(i, 1);
         await saveData();
         render();
@@ -328,6 +360,47 @@ function sortItems(type) {
     render();
 }
 
+// Fonction pour obtenir tous les items filtrés et triés
+function getFilteredAndSortedItems() {
+    let allItems = [];
+    
+    // Ajouter les items selon le filtre de type
+    if(filterType === "tout") {
+        allItems = [
+            ...animes.map(a => ({...a, type: "animes"})),
+            ...films.map(f => ({...f, type: "films"})),
+            ...series.map(s => ({...s, type: "series"}))
+        ];
+    } else if(filterType === "animes") {
+        allItems = animes.map(a => ({...a, type: "animes"}));
+    } else if(filterType === "films") {
+        allItems = films.map(f => ({...f, type: "films"}));
+    } else if(filterType === "series") {
+        allItems = series.map(s => ({...s, type: "series"}));
+    }
+    
+    // Appliquer le tri
+    switch(sortBy) {
+        case "date_new":
+            allItems.sort((a,b) => new Date(b.date || 0) - new Date(a.date || 0));
+            break;
+        case "date_old":
+            allItems.sort((a,b) => new Date(a.date || 0) - new Date(b.date || 0));
+            break;
+        case "rating_high":
+            allItems.sort((a,b) => b.rating - a.rating);
+            break;
+        case "rating_low":
+            allItems.sort((a,b) => a.rating - b.rating);
+            break;
+        case "name":
+            allItems.sort((a,b) => a.title.localeCompare(b.title));
+            break;
+    }
+    
+    return allItems;
+}
+
 /* ===== STATS ===== */
 function updateStats() {
     const statTotal = document.getElementById("statTotal");
@@ -348,27 +421,56 @@ function render() {
     if(animeListEl) {
         const searchEl = document.getElementById("search");
         const q = searchEl && searchEl.value ? searchEl.value.toLowerCase() : "";
-        const currentList = currentType === "animes" ? animes : currentType === "films" ? films : series;
         
-        const typeLabel = currentType === "animes" ? "🎌" : currentType === "films" ? "🎬" : "📺";
+        // Vérifier si nous sommes sur la page list.html
+        const isListPage = document.getElementById("filterType") !== null;
         
-        animeListEl.innerHTML = currentList
-            .filter(a => a.title.toLowerCase().includes(q))
-            .map((a,i)=>`
+        let itemsToShow;
+        if(isListPage) {
+            // Page de bibliothèque avec filtres avancés
+            itemsToShow = getFilteredAndSortedItems()
+                .filter(a => a.title.toLowerCase().includes(q));
+        } else {
+            // Page add.html avec type courant uniquement
+            const currentList = currentType === "animes" ? animes : currentType === "films" ? films : series;
+            itemsToShow = currentList
+                .filter(a => a.title.toLowerCase().includes(q))
+                .map(a => ({...a, type: currentType}));
+        }
+        
+        animeListEl.innerHTML = itemsToShow
+            .map((a, i) => {
+                const typeLabel = a.type === "animes" ? "🎌" : a.type === "films" ? "🎬" : "📺";
+                const typeName = a.type === "animes" ? "Animé" : a.type === "films" ? "Film" : "Série";
+                
+                // Trouver l'index réel dans le tableau original
+                let realIndex = i;
+                if(isListPage) {
+                    // Sur la page list, on doit trouver l'index dans le tableau d'origine
+                    const originalList = a.type === "animes" ? animes : a.type === "films" ? films : series;
+                    realIndex = originalList.findIndex(item => item.title === a.title && item.date === a.date);
+                }
+                
+                return `
             <div class="card">
                 <img src="${a.image}" alt="${a.title}">
                 <div class="card-content">
-                    <div class="card-type">${typeLabel} ${currentType.slice(0,-1).toUpperCase()}</div>
+                    <div class="card-type">${typeLabel} ${typeName}</div>
                     <div class="card-title">${a.title}</div>
                     <div class="card-rating">${stars(a.rating)}</div>
                     <div class="card-meta">📅 ${a.date || "?"}</div>
                     <div class="card-comment">${a.comment || ""}</div>
                     <div class="card-actions">
-                        <button class="btn-small" onclick="editItem(${i})">✏️ Éditer</button>
-                        <button class="btn-small btn-danger" onclick="deleteItem(${i})">🗑️ Supprimer</button>
+                        <button class="btn-small" onclick="editItem(${realIndex}, '${a.type}')">✏️ Éditer</button>
+                        <button class="btn-small btn-danger" onclick="deleteItem(${realIndex}, '${a.type}')">🗑️ Supprimer</button>
                     </div>
                 </div>
-            </div>`).join("");
+            </div>`;
+            }).join("");
+        
+        // Mettre à jour le compteur d'items
+        const countEl = document.getElementById("countItems");
+        if(countEl) countEl.textContent = itemsToShow.length;
     }
 
     if(watchListEl) {
@@ -397,4 +499,24 @@ setTimeout(() => {
         render();
     }
     window.updateAuthIcon();
+    
+    // Charger les filtres depuis les éléments si présents
+    const filterTypeEl = document.getElementById("filterType");
+    const sortByEl = document.getElementById("sortBy");
+    
+    if(filterTypeEl) {
+        filterType = filterTypeEl.value || "tout";
+        filterTypeEl.addEventListener("change", (e) => {
+            filterType = e.target.value;
+            window.switchFilterType(filterType);
+        });
+    }
+    
+    if(sortByEl) {
+        sortBy = sortByEl.value || "date_new";
+        sortByEl.addEventListener("change", (e) => {
+            sortBy = e.target.value;
+            render();
+        });
+    }
 }, 500);

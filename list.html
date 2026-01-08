@@ -16,6 +16,7 @@
         <a href="index.html">Accueil</a>
         <a href="add.html">Ajouter</a>
         <a href="list.html">Ma Bibliothèque</a>
+        <a href="watchlist.html">⏳ Watchlist</a>
         <a href="about.html">À propos</a>
     </nav>
     <div class="header-right">
@@ -25,41 +26,59 @@
 
 <main>
 <section>
-    <h2>🔍 Recherche et Tri</h2>
+    <h2>📚 Ma Bibliothèque</h2>
+    <p style="color: var(--text-muted); margin-bottom: 24px;">Tous les titres que tu as regardés</p>
     
-    <div style="display: grid; grid-template-columns: 1fr auto; gap: 16px; margin-bottom: 24px;">
-        <div class="form-group" style="margin-bottom: 0;">
+    <!-- FILTRES -->
+    <div style="background: var(--bg-lighter); padding: 20px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 24px;">
+        <h3 style="margin-top: 0;">🔍 Filtres et Tri</h3>
+        
+        <!-- Recherche -->
+        <div class="form-group">
+            <label for="search">Rechercher</label>
             <input id="search" type="text" placeholder="Rechercher un titre..." oninput="render()" style="margin-bottom: 0;">
         </div>
-        <div class="form-group" style="margin-bottom: 0;">
-            <select onchange="sortItems(this.value)" style="margin-bottom: 0;">
-                <option value="">-- Trier par --</option>
-                <option value="name">Nom (A-Z)</option>
-                <option value="rating">Note (★★★)</option>
-                <option value="date">Date (récent)</option>
-            </select>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px;">
+            <!-- Type Filter -->
+            <div class="form-group" style="margin-bottom: 0;">
+                <label for="filterType">Filtrer par type</label>
+                <select id="filterType" onchange="render()" style="margin-bottom: 0;">
+                    <option value="tout">📺 Tous les types</option>
+                    <option value="animes">🎌 Animés</option>
+                    <option value="films">🎬 Films</option>
+                    <option value="series">📺 Séries</option>
+                </select>
+            </div>
+
+            <!-- Sort Filter -->
+            <div class="form-group" style="margin-bottom: 0;">
+                <label for="sortBy">Trier par</label>
+                <select id="sortBy" onchange="render()" style="margin-bottom: 0;">
+                    <option value="date_new">📅 Plus récent</option>
+                    <option value="date_old">📅 Plus vieux</option>
+                    <option value="rating_high">⭐ Mieux noté</option>
+                    <option value="rating_low">⭐ Moins noté</option>
+                    <option value="name">📛 Nom (A-Z)</option>
+                </select>
+            </div>
         </div>
     </div>
 
-    <div class="type-tabs">
-        <button class="tab-btn active" onclick="window.switchType('animes')" data-type="animes">🎌 Animés</button>
-        <button class="tab-btn" onclick="window.switchType('films')" data-type="films">🎬 Films</button>
-        <button class="tab-btn" onclick="window.switchType('series')" data-type="series">📺 Séries</button>
+    <!-- TYPE TABS -->
+    <div class="type-tabs" style="margin-bottom: 24px;">
+        <button class="tab-btn active" onclick="window.switchFilterType('tout')" data-type="tout">📺 Tous</button>
+        <button class="tab-btn" onclick="window.switchFilterType('animes')" data-type="animes">🎌 Animés</button>
+        <button class="tab-btn" onclick="window.switchFilterType('films')" data-type="films">🎬 Films</button>
+        <button class="tab-btn" onclick="window.switchFilterType('series')" data-type="series">📺 Séries</button>
     </div>
 </section>
 
 <section>
-    <h2>📚 Ma Bibliothèque</h2>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2 style="margin: 0;">📖 Bibliothèque (<span id="countItems">0</span>)</h2>
+    </div>
     <div class="grid" id="animeList"></div>
-</section>
-
-<section>
-    <h2>⏳ Ma Watchlist</h2>
-    <div style="display: flex; gap: 12px; margin-bottom: 20px;">
-        <input id="watchInput" type="text" placeholder="Ajouter à ma watchlist..." style="flex: 1; margin-bottom: 0;">
-        <button class="btn-secondary" onclick="addWatch()" style="width: auto;">Ajouter</button>
-    </div>
-    <div class="grid" id="watchList"></div>
 </section>
 </main>
 

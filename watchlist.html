@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anime Tracker - Ma Watchlist</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+    <div>
+        <h1>🎬 Anime Tracker</h1>
+    </div>
+    <nav>
+        <a href="index.html">Accueil</a>
+        <a href="add.html">Ajouter</a>
+        <a href="list.html">Ma Bibliothèque</a>
+        <a href="watchlist.html">⏳ Watchlist</a>
+        <a href="about.html">À propos</a>
+    </nav>
+    <div class="header-right">
+        <div class="auth-icon" onclick="window.openAuthModal()" id="authIcon">👤</div>
+    </div>
+</header>
+
+<main>
+<section>
+    <h2>⏳ Ma Watchlist</h2>
+    <p style="color: var(--text-muted); margin-bottom: 20px;">Les titres que tu veux regarder bientôt</p>
+    
+    <div style="display: flex; gap: 12px; margin-bottom: 20px;">
+        <input id="watchInput" type="text" placeholder="Ajouter à ma watchlist..." style="flex: 1; margin-bottom: 0;">
+        <button class="btn-secondary" onclick="addWatch()" style="width: auto;">➕ Ajouter</button>
+    </div>
+
+    <div class="grid" id="watchList"></div>
+</section>
+</main>
+
+<script src="site.js"></script>
+
+</body>
+</html>

@@ -56,6 +56,16 @@ function loadProfilesLocal() {
 }
 
 /* ===== AUTH MODAL ===== */
+window.toggleAuthOrProfile = function() {
+    if(window.auth && window.auth.currentUser) {
+        // L'utilisateur est connecté, afficher son profil
+        window.openProfileModal();
+    } else {
+        // L'utilisateur n'est pas connecté, afficher le modal d'authentification
+        window.openAuthModal();
+    }
+};
+
 window.openAuthModal = function() {
     const modal = document.getElementById("authModal");
     if(modal) modal.classList.add("active");
@@ -63,6 +73,30 @@ window.openAuthModal = function() {
 
 window.closeAuthModal = function() {
     const modal = document.getElementById("authModal");
+    if(modal) modal.classList.remove("active");
+};
+
+window.openProfileModal = function() {
+    const p = profiles[currentProfileIndex];
+    if(!p) return;
+    
+    // Remplir les informations du profil
+    const avatar = document.getElementById("profileModalAvatar");
+    const name = document.getElementById("profileModalName");
+    const email = document.getElementById("profileModalEmail");
+    const bio = document.getElementById("profileModalBio");
+    
+    if(avatar) avatar.src = p.avatar;
+    if(name) name.textContent = p.name;
+    if(email) email.textContent = window.auth && window.auth.currentUser ? window.auth.currentUser.email : "Non connecté";
+    if(bio) bio.textContent = p.bio || "Aucune bio";
+    
+    const modal = document.getElementById("profileModal");
+    if(modal) modal.classList.add("active");
+};
+
+window.closeProfileModal = function() {
+    const modal = document.getElementById("profileModal");
     if(modal) modal.classList.remove("active");
 };
 

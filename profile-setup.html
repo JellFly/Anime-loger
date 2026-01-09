@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anime Tracker - Créer votre profil</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDWbsbfnF5e-E3rCMguVFF69PpAM-ZlAZ4",
+  authDomain: "anime-lo.firebaseapp.com",
+  projectId: "anime-lo",
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+window.auth = auth;
+window.db = db;
+
+onAuthStateChanged(auth, async (user) => {
+  console.log("Auth state changed, user:", user);
+  if(!user) {
+    console.log("Utilisateur non connecté, redirection vers index");
+    window.location.href = "index.html";
+  } else {
+    try {
+      const docSnap = await getDoc(doc(db, "users", user.uid));
+      console.log("Document existe:", docSnap.exists());
+      if(docSnap.exists()) {
+        const data = docSnap.data();
+        console.log("Données utilisateur:", data);
+        // Si l'utilisateur a déjà un profil avec un vrai nom (pas "Profil 1 par défaut"), redirige
+        if(data.profiles && data.profiles[0] && data.profiles[0].name !== "Profil 1") {
+          console.log("Profil déjà créé, redirection");
+          window.location.href = "index.html";
+        }
+      }
+    } catch(e) {
+      console.error("Erreur:", e);
+    }
+  }
+});
+
+window.completeProfileSetup = async function() {
+  const name = document.getElementById("profileName").value.trim();
+  const bio = document.getElementById("profileBio").value.trim();
+  const avatar = document.getElementById("profileAvatar").value.trim() || "https://via.placeholder.com/100";
+
+  if(!name) {
+    alert("Veuillez entrer votre nom");
+    return;
+  }
+
+  try {
+    const userRef = doc(db, "users", auth.currentUser.uid);
+    try {
+      const docSnap = await getDoc(userRef);
+      
+      if(docSnap.exists()) {
+        const data = docSnap.data();
+        const profiles = data.profiles || [];
+        
+        // Mettre à jour le premier profil avec les infos entrées
+        profiles[0] = {
+          name: name,
+          avatar: avatar,
+          bio: bio,
+          animes: [],
+          films: [],
+          series: [],
+          watch: []
+        };
+        
+        await updateDoc(userRef, {
+          profiles: profiles,
+          currentProfileIndex: 0
+        });
+      }
+    } catch(dbError) {
+      console.log("Firebase Firestore indisponible, utilisation du stockage local");
+      // Fallback au stockage local
+      localStorage.setItem("profiles", JSON.stringify([{
+        name: name,
+        avatar: avatar,
+        bio: bio,
+        animes: [],
+        films: [],
+        series: [],
+        watch: []
+      }]));
+      localStorage.setItem("currentProfileIndex", "0");
+    }
+    
+    alert("Profil créé avec succès !");
+    window.location.href = "index.html";
+  } catch(e) {
+    alert("Erreur: " + e.message);
+  }
+};
+</script>
+
+<body>
+
+<header>
+    <div>
+        <h1>🎬 Anime Tracker</h1>
+    </div>
+</header>
+
+<main>
+<section class="text-center" style="max-width: 600px; margin: 60px auto; padding: 40px;">
+    <h2>👤 Créer votre profil</h2>
+    <p style="color: var(--text-muted); font-size: 16px; margin: 16px 0;">Commencez par remplir vos informations personnelles</p>
+    
+    <div style="background: var(--bg-lighter); padding: 40px; border-radius: 12px; border: 1px solid var(--border); margin-top: 30px; text-align: left;">
+        
+        <div style="margin-bottom: 24px;">
+            <label for="profileName" style="display: block; margin-bottom: 8px; font-weight: bold;">Votre nom</label>
+            <input id="profileName" type="text" placeholder="Ex: Jean Dupont" style="width: 100%;">
+        </div>
+
+        <div style="margin-bottom: 24px;">
+            <label for="profileBio" style="display: block; margin-bottom: 8px; font-weight: bold;">Bio (optionnel)</label>
+            <textarea id="profileBio" placeholder="Parlez un peu de vous..." style="width: 100%; min-height: 100px; border: 1px solid var(--border); padding: 12px; border-radius: 8px; background: var(--bg); color: var(--text); font-family: inherit;"></textarea>
+        </div>
+
+        <div style="margin-bottom: 30px;">
+            <label for="profileAvatar" style="display: block; margin-bottom: 8px; font-weight: bold;">URL de votre avatar (optionnel)</label>
+            <input id="profileAvatar" type="url" placeholder="https://..." style="width: 100%;">
+        </div>
+
+        <button class="btn-primary" onclick="window.completeProfileSetup()" style="width: 100%; padding: 12px; font-size: 16px;">
+            ✅ Commencer
+        </button>
+    </div>
+</section>
+</main>
+
+<script src="site.js"></script>
+
+</body>
+</html>

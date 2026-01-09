@@ -15,6 +15,9 @@ const firebaseConfig = {
   apiKey: "AIzaSyDWbsbfnF5e-E3rCMguVFF69PpAM-ZlAZ4",
   authDomain: "anime-lo.firebaseapp.com",
   projectId: "anime-lo",
+  storageBucket: "anime-lo.firebasestorage.app",
+  messagingSenderId: "424542474390",
+  appId: "1:424542474390:web:2c28714a4c4f0178daf2b7"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -27,8 +30,22 @@ window.db = db;
 window.register = async function(email, password) {
   try {
     await createUserWithEmailAndPassword(auth, email, password);
-    await setDoc(doc(db, "users", auth.currentUser.uid), {
-      profiles: [{
+    try {
+      await setDoc(doc(db, "users", auth.currentUser.uid), {
+        profiles: [{
+          name: "Profil 1",
+          avatar: "https://via.placeholder.com/100",
+          bio: "",
+          animes: [],
+          films: [],
+          series: [],
+          watch: []
+        }],
+        currentProfileIndex: 0
+      });
+    } catch(dbError) {
+      console.log("Firebase Firestore indisponible, utilisation du stockage local");
+      localStorage.setItem("profiles", JSON.stringify([{
         name: "Profil 1",
         avatar: "https://via.placeholder.com/100",
         bio: "",
@@ -36,12 +53,12 @@ window.register = async function(email, password) {
         films: [],
         series: [],
         watch: []
-      }],
-      currentProfileIndex: 0
-    });
-    alert("Compte créé !");
+      }]));
+      localStorage.setItem("currentProfileIndex", "0");
+    }
+    alert("Compte créé ! Veuillez compléter votre profil.");
     window.closeAuthModal();
-    if(window.loadProfilesFromFirebase) window.loadProfilesFromFirebase();
+    window.location.href = "profile-setup.html";
   } catch(e) {
     alert("Erreur: " + e.message);
   }
@@ -94,6 +111,12 @@ onAuthStateChanged(auth, (user) => {
   } else {
     console.log("Utilisateur déconnecté");
     window.updateAuthIcon();
+    // Charger les profils locaux si non connecté
+    setTimeout(() => {
+      if(window.loadProfilesFromFirebase) {
+        window.loadProfilesFromFirebase();
+      }
+    }, 500);
   }
 });
 </script>
@@ -112,9 +135,27 @@ onAuthStateChanged(auth, (user) => {
         <a href="about.html">À propos</a>
     </nav>
     <div class="header-right">
-        <div class="auth-icon" onclick="window.openAuthModal()" id="authIcon">👤</div>
+        <div class="auth-icon" onclick="window.toggleAuthOrProfile()" id="authIcon">👤</div>
     </div>
 </header>
+
+<!-- Profile Modal -->
+<div class="modal" id="profileModal">
+    <div class="modal-content" style="max-width: 500px;">
+        <button class="modal-close" onclick="window.closeProfileModal()">&times;</button>
+        <h2>👤 Mon Profil</h2>
+        
+        <div style="text-align: center; margin: 30px 0;">
+            <img id="profileModalAvatar" src="" alt="Avatar" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary);">
+            <h3 id="profileModalName" style="margin-top: 16px; margin-bottom: 8px;">Nom</h3>
+            <p id="profileModalEmail" style="color: var(--text-muted); margin-bottom: 16px;">email@example.com</p>
+            <p id="profileModalBio" style="color: var(--text-muted); font-style: italic; margin-bottom: 20px;">Bio</p>
+        </div>
+        
+        <button class="btn-secondary" onclick="window.logout()" style="width: 100%; margin-bottom: 12px;">🚪 Se déconnecter</button>
+        <button class="btn-secondary" onclick="window.closeProfileModal()" style="width: 100%;">Fermer</button>
+    </div>
+</div>
 
 <!-- Auth Modal -->
 <div class="modal" id="authModal">

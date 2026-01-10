@@ -178,6 +178,41 @@ window.switchFilterType = function(type) {
 /* ===== UTILS ===== */
 const stars = n => "⭐".repeat(n);
 
+/* ===== FIREBASE DETAIL STATE (watched, liked, rating, review) ===== */
+window.saveDetailStateToFirebase = async function(filmTitle, state) {
+    if(!window.auth?.currentUser || !window.db) {
+        // Fallback to localStorage if Firebase unavailable
+        const detailState = JSON.parse(localStorage.getItem("detailState")) || {};
+        detailState[filmTitle] = state;
+        localStorage.setItem("detailState", JSON.stringify(detailState));
+        return;
+    }
+    
+    try {
+        const { updateDoc, doc } = await import("https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js");
+        await updateDoc(doc(window.db, "users", window.auth.currentUser.uid), {
+            filmStates: {
+                ...(window.userDataFromFirebase?.filmStates || {}),
+                [filmTitle]: state
+            }
+        });
+        console.log("État du film sauvegardé sur Firebase");
+    } catch(e) {
+        console.error("Erreur sauvegarde Firebase detail:", e);
+        const detailState = JSON.parse(localStorage.getItem("detailState")) || {};
+        detailState[filmTitle] = state;
+        localStorage.setItem("detailState", JSON.stringify(detailState));
+    }
+};
+
+window.getDetailStateFromFirebase = function(filmTitle) {
+    if(window.auth?.currentUser && window.userDataFromFirebase?.filmStates?.[filmTitle]) {
+        return window.userDataFromFirebase.filmStates[filmTitle];
+    }
+    // Fallback to localStorage
+    const detailState = JSON.parse(localStorage.getItem("detailState")) || {};
+    return detailState[filmTitle] || { watched: false, liked: false, rating: 0, review: "" };
+};
 async function saveProfiles() {
     if(window.auth && window.auth.currentUser && window.db) {
         try {
@@ -454,6 +489,15 @@ function getFilteredAndSortedItems() {
         allItems = films.map(f => ({...f, type: "films"}));
     } else if(filterType === "series") {
         allItems = series.map(s => ({...s, type: "series"}));
+    } else if(filterType === "favoris") {
+        // Obtenir seulement les favoris (liked === true)
+        allItems = [
+            ...animes.filter(a => a.liked).map(a => ({...a, type: "animes"})),
+            ...films.filter(f => f.liked).map(f => ({...f, type: "films"})),
+            ...series.filter(s => s.liked).map(s => ({...s, type: "series"}))
+        ];
+    }
+        allItems = series.map(s => ({...s, type: "series"}));
     }
     
     // Appliquer le tri
@@ -545,11 +589,20 @@ function render() {
                 .filter(a => a.title.toLowerCase().includes(q))
                 .map(a => ({...a, type: currentType}));
         }
+
+        // Afficher/masquer la section favoris
+        const favoritesSection = document.getElementById("favoritesSection");
+        if(favoritesSection && isListPage && filterType === "favoris") {
+            favoritesSection.style.display = "block";
+        } else if(favoritesSection) {
+            favoritesSection.style.display = "none";
+        }
         
         animeListEl.innerHTML = itemsToShow
             .map((a, i) => {
                 const typeLabel = a.type === "animes" ? "🎌" : a.type === "films" ? "🎬" : "📺";
                 const typeName = a.type === "animes" ? "Animé" : a.type === "films" ? "Film" : "Série";
+                const heartIcon = a.liked ? "❤️" : "";
                 
                 // Trouver l'index réel dans le tableau original
                 let realIndex = i;
@@ -564,8 +617,9 @@ function render() {
                 <img src="${a.image}" alt="${a.title}">
                 <div class="card-content">
                     <div class="card-type">${typeLabel} ${typeName}</div>
-                    <div class="card-title">${a.title}</div>
-                    <div class="card-rating">${stars(a.rating)}</div>
+                    <div class="card-title">${a.title} ${heartIcon}</div>
+                    <div class="card-rating">${stars(Math.round(a.rating))}</div>
+                    ${a.rating > 0 ? `<div style="font-size: 12px; color: var(--text-muted);">Votre note: ${a.rating}/5</div>` : ""}
                     <div class="card-meta">📅 ${a.date || "?"}</div>
                     <div class="card-comment">${a.comment || ""}</div>
                     <div class="card-actions">
@@ -574,6 +628,7 @@ function render() {
                     </div>
                 </div>
             </div>`;
+
             }).join("");
         
         // Mettre à jour le compteur d'items

@@ -72,7 +72,16 @@
         <button class="tab-btn" onclick="window.switchFilterType('animes')" data-type="animes">🎌 Animés</button>
         <button class="tab-btn" onclick="window.switchFilterType('films')" data-type="films">🎬 Films</button>
         <button class="tab-btn" onclick="window.switchFilterType('series')" data-type="series">📺 Séries</button>
+        <button class="tab-btn" onclick="window.switchFilterType('favoris')" data-type="favoris">❤️ Mes favoris</button>
     </div>
+</section>
+
+<!-- FAVORIS SECTION -->
+<section id="favoritesSection" style="display: none;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2 style="margin: 0;">❤️ Mes Favoris (<span id="countFavorites">0</span>)</h2>
+    </div>
+    <div class="grid" id="favoritesList"></div>
 </section>
 
 <section>

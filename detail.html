@@ -180,6 +180,100 @@
             color: var(--text-muted);
         }
 
+        .action-box {
+            background: linear-gradient(135deg, #3d4f5f 0%, #2d3e4e 100%);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+
+        .action-box-top {
+            display: flex;
+            justify-content: space-around;
+            gap: 12px;
+            margin-bottom: 24px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .action-icon-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            flex: 1;
+            padding: 12px;
+            border-radius: 8px;
+            transition: all 0.3s;
+            color: var(--text-muted);
+            font-weight: 500;
+            font-size: 13px;
+        }
+
+        .action-icon-btn:hover {
+            background: rgba(99, 102, 241, 0.2);
+            color: var(--primary);
+        }
+
+        .action-icon-btn .icon {
+            font-size: 24px;
+        }
+
+        .action-box-rating {
+            margin-bottom: 20px;
+        }
+
+        .action-box-rating h4 {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .rating-stars-interactive {
+            font-size: 24px;
+            letter-spacing: 4px;
+            cursor: pointer;
+        }
+
+        .rating-stars-interactive span {
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .rating-stars-interactive span:hover {
+            transform: scale(1.2);
+        }
+
+        .action-box-btn {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            width: 100%;
+        }
+
+        .action-box-btn button {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: transparent;
+            color: var(--text-muted);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .action-box-btn button:hover {
+            background: rgba(99, 102, 241, 0.2);
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
         @media (max-width: 768px) {
             .detail-header {
                 grid-template-columns: 1fr;
@@ -218,6 +312,24 @@
         <div class="auth-icon" onclick="window.toggleAuthOrProfile()" id="authIcon">👤</div>
     </div>
 </header>
+
+<!-- Review Modal -->
+<div class="modal" id="reviewModal">
+    <div class="modal-content" style="max-width: 600px;">
+        <button class="modal-close" onclick="window.closeReviewModal()">&times;</button>
+        <h2>📝 Ajouter un avis</h2>
+        
+        <div class="form-group">
+            <label for="reviewText">Votre avis</label>
+            <textarea id="reviewText" placeholder="Partage ton avis sur ce film..." style="min-height: 120px;"></textarea>
+        </div>
+
+        <div style="display: flex; gap: 12px;">
+            <button class="btn-primary" onclick="window.saveReview()" style="flex: 1;">💾 Sauvegarder</button>
+            <button class="btn-secondary" onclick="window.closeReviewModal()" style="flex: 1;">Annuler</button>
+        </div>
+    </div>
+</div>
 
 <main>
 <section>
@@ -261,6 +373,45 @@
             <div style="margin-bottom: 24px;">
                 <h3 style="margin: 0 0 12px 0;">Genres</h3>
                 <div class="detail-genres" id="detailGenres"></div>
+            </div>
+
+            <div class="action-box">
+                <div class="action-box-top">
+                    <div class="action-icon-btn" onclick="window.toggleWatched()">
+                        <div class="icon">👁️</div>
+                        <span id="watchedText">Regardé</span>
+                    </div>
+                    <div class="action-icon-btn" onclick="window.toggleLike()">
+                        <div class="icon">❤️</div>
+                        <span id="likeText">J'aime</span>
+                    </div>
+                    <div class="action-icon-btn" onclick="window.addToWatchlist()">
+                        <div class="icon">⏱️➕</div>
+                        <span>Watchlist</span>
+                    </div>
+                </div>
+
+                <div class="action-box-rating">
+                    <h4>Note personnelle</h4>
+                    <div class="rating-stars-interactive" id="userRating">
+                        <span onclick="window.setUserRating(0.5)">⭐</span>
+                        <span onclick="window.setUserRating(1)">⭐</span>
+                        <span onclick="window.setUserRating(1.5)">⭐</span>
+                        <span onclick="window.setUserRating(2)">⭐</span>
+                        <span onclick="window.setUserRating(2.5)">⭐</span>
+                        <span onclick="window.setUserRating(3)">⭐</span>
+                        <span onclick="window.setUserRating(3.5)">⭐</span>
+                        <span onclick="window.setUserRating(4)">⭐</span>
+                        <span onclick="window.setUserRating(4.5)">⭐</span>
+                        <span onclick="window.setUserRating(5)">⭐</span>
+                    </div>
+                </div>
+
+                <div class="action-box-btn">
+                    <button onclick="window.showActivity()">📊 Voir l'activité</button>
+                    <button onclick="window.openReview()">📝 Ajouter un avis</button>
+                    <button onclick="window.addToLists()">📋 Ajouter aux listes</button>
+                </div>
             </div>
 
             <div class="detail-actions">
@@ -311,6 +462,11 @@
             return;
         }
 
+        const currentDetail = detail.title || detail.name;
+        
+        // Charger l'état sauvegardé depuis Firebase/localStorage
+        const state = window.getDetailStateFromFirebase(currentDetail);
+
         // Remplir les informations
         document.getElementById('detailTitle').textContent = detail.title || detail.name || 'Sans titre';
         document.getElementById('detailYear').textContent = detail.year || '?';
@@ -352,6 +508,33 @@
         if(detail.duration) {
             document.getElementById('detailDuration').textContent = detail.duration + ' minutes';
         }
+
+        // Charger les états sauvegardés
+        if(state.watched) {
+            document.getElementById('watchedText').textContent = '✓ Regardé';
+            document.querySelector('[onclick="window.toggleWatched()"]').style.color = 'var(--primary)';
+        }
+        if(state.liked) {
+            const likeBtn = document.querySelector('[onclick="window.toggleLike()"]');
+            likeBtn.innerHTML = '❤️<span id="likeText">J\'aime</span>';
+            likeBtn.style.color = 'var(--primary)';
+        }
+        if(state.rating > 0) {
+            window.displayRating(state.rating);
+        }
+    };
+
+    window.displayRating = function(rating) {
+        const ratingEl = document.getElementById('userRating');
+        ratingEl.innerHTML = '';
+        const steps = [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5];
+        steps.forEach((star, i) => {
+            const span = document.createElement('span');
+            span.textContent = '⭐';
+            span.style.opacity = i < rating * 2 ? '1' : '0.3';
+            span.onclick = () => window.setUserRating(star);
+            ratingEl.appendChild(span);
+        });
     };
 
     window.addToLibraryFromDetail = function() {
@@ -378,17 +561,194 @@
         if(!detail) return alert("Erreur: Données manquantes");
 
         const title = detail.title || detail.name;
-        alert(`"${title}" a été ajouté à votre watchlist !`);
         
         // Charger les profils et ajouter à la watchlist
         if(window.profiles && window.profiles.length > 0) {
             const profile = window.profiles[window.currentProfileIndex || 0];
             if(profile) {
                 profile.watch = profile.watch || [];
-                profile.watch.push(title);
-                window.saveProfiles();
+                if(!profile.watch.includes(title)) {
+                    profile.watch.push(title);
+                    window.saveProfiles();
+                    alert(`"${title}" a été ajouté à votre watchlist !`);
+                } else {
+                    alert(`"${title}" est déjà dans votre watchlist`);
+                }
             }
         }
+    };
+
+    window.toggleWatched = async function() {
+        const detail = JSON.parse(localStorage.getItem("tmdbDetail"));
+        if(!detail) return;
+
+        const currentDetail = detail.title || detail.name;
+        const state = window.getDetailStateFromFirebase(currentDetail);
+        state.watched = !state.watched;
+
+        // Sauvegarder sur Firebase
+        await window.saveDetailStateToFirebase(currentDetail, state);
+
+        // Si watched, ajouter à la bibliothèque
+        if(state.watched) {
+            const type = detail.type === 'movie' ? 'films' : detail.type === 'anime' ? 'animes' : 'series';
+            const item = {
+                title: currentDetail,
+                image: detail.poster || 'https://via.placeholder.com/400x600',
+                rating: state.rating || 0,
+                date: new Date().toISOString().split("T")[0],
+                comment: state.review || ""
+            };
+            
+            if(window.profiles && window.profiles.length > 0) {
+                const profile = window.profiles[window.currentProfileIndex || 0];
+                if(profile) {
+                    const arr = type === 'animes' ? profile.animes : type === 'films' ? profile.films : profile.series;
+                    if(!arr.find(a => a.title === currentDetail)) {
+                        arr.push(item);
+                        await window.saveProfiles();
+                    }
+                }
+            }
+        }
+        
+        const btn = event.target.closest('.action-icon-btn');
+        btn.style.color = state.watched ? 'var(--primary)' : 'var(--text-muted)';
+        document.getElementById('watchedText').textContent = state.watched ? '✓ Regardé' : 'Regardé';
+    };
+
+    window.toggleLike = async function() {
+        const detail = JSON.parse(localStorage.getItem("tmdbDetail"));
+        if(!detail) return;
+
+        const currentDetail = detail.title || detail.name;
+        const state = window.getDetailStateFromFirebase(currentDetail);
+        state.liked = !state.liked;
+
+        // Sauvegarder sur Firebase
+        await window.saveDetailStateToFirebase(currentDetail, state);
+
+        // Si liked, ajouter à la bibliothèque avec tag "liked"
+        if(state.liked) {
+            const type = detail.type === 'movie' ? 'films' : detail.type === 'anime' ? 'animes' : 'series';
+            const item = {
+                title: currentDetail,
+                image: detail.poster || 'https://via.placeholder.com/400x600',
+                rating: state.rating || 0,
+                date: new Date().toISOString().split("T")[0],
+                comment: state.review || "",
+                liked: true
+            };
+            
+            if(window.profiles && window.profiles.length > 0) {
+                const profile = window.profiles[window.currentProfileIndex || 0];
+                if(profile) {
+                    const arr = type === 'animes' ? profile.animes : type === 'films' ? profile.films : profile.series;
+                    if(!arr.find(a => a.title === currentDetail)) {
+                        arr.push(item);
+                        await window.saveProfiles();
+                    } else {
+                        const existingItem = arr.find(a => a.title === currentDetail);
+                        existingItem.liked = true;
+                        await window.saveProfiles();
+                    }
+                }
+            }
+        }
+        
+        const btn = event.target.closest('.action-icon-btn');
+        btn.style.color = state.liked ? 'var(--primary)' : 'var(--text-muted)';
+        btn.innerHTML = (state.liked ? '❤️' : '🤍') + '<span id="likeText">J\'aime</span>';
+    };
+
+    window.setUserRating = async function(stars) {
+        const detail = JSON.parse(localStorage.getItem("tmdbDetail"));
+        if(!detail) return;
+
+        const currentDetail = detail.title || detail.name;
+        const state = window.getDetailStateFromFirebase(currentDetail);
+        state.rating = stars;
+
+        // Sauvegarder sur Firebase
+        await window.saveDetailStateToFirebase(currentDetail, state);
+
+        // Mettre à jour la note dans la bibliothèque si le film y est
+        const type = detail.type === 'movie' ? 'films' : detail.type === 'anime' ? 'animes' : 'series';
+        if(window.profiles && window.profiles.length > 0) {
+            const profile = window.profiles[window.currentProfileIndex || 0];
+            if(profile) {
+                const arr = type === 'animes' ? profile.animes : type === 'films' ? profile.films : profile.series;
+                const existingItem = arr.find(a => a.title === currentDetail);
+                if(existingItem) {
+                    existingItem.rating = stars;
+                    await window.saveProfiles();
+                }
+            }
+        }
+
+        window.displayRating(stars);
+    };
+
+    window.openReviewModal = function() {
+        const modal = document.getElementById("reviewModal");
+        if(modal) modal.classList.add("active");
+    };
+
+    window.closeReviewModal = function() {
+        const modal = document.getElementById("reviewModal");
+        if(modal) modal.classList.remove("active");
+    };
+
+    window.openReview = window.openReviewModal;
+
+    window.saveReview = async function() {
+        const detail = JSON.parse(localStorage.getItem("tmdbDetail"));
+        if(!detail) return alert("Erreur: Données manquantes");
+
+        const reviewText = document.getElementById("reviewText").value;
+        const currentDetail = detail.title || detail.name;
+        const state = window.getDetailStateFromFirebase(currentDetail);
+        state.review = reviewText;
+
+        // Sauvegarder sur Firebase
+        await window.saveDetailStateToFirebase(currentDetail, state);
+
+        // Mettre à jour la comment dans la bibliothèque
+        const type = detail.type === 'movie' ? 'films' : detail.type === 'anime' ? 'animes' : 'series';
+        if(window.profiles && window.profiles.length > 0) {
+            const profile = window.profiles[window.currentProfileIndex || 0];
+            if(profile) {
+                const arr = type === 'animes' ? profile.animes : type === 'films' ? profile.films : profile.series;
+                const existingItem = arr.find(a => a.title === currentDetail);
+                if(existingItem) {
+                    existingItem.comment = reviewText;
+                    await window.saveProfiles();
+                } else {
+                    // Créer un nouvel item avec le review
+                    const newItem = {
+                        title: currentDetail,
+                        image: detail.poster || 'https://via.placeholder.com/400x600',
+                        rating: state.rating || 0,
+                        date: new Date().toISOString().split("T")[0],
+                        comment: reviewText
+                    };
+                    arr.push(newItem);
+                    await window.saveProfiles();
+                }
+            }
+        }
+
+        alert("Avis sauvegardé !");
+        document.getElementById("reviewText").value = "";
+        window.closeReviewModal();
+    };
+
+    window.showActivity = function() {
+        alert("Fonctionnalité en cours de développement");
+    };
+
+    window.addToLists = function() {
+        alert("Fonctionnalité en cours de développement");
     };
 
     // Charger la page au chargement

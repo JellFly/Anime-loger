@@ -497,8 +497,6 @@ function getFilteredAndSortedItems() {
             ...series.filter(s => s.liked).map(s => ({...s, type: "series"}))
         ];
     }
-        allItems = series.map(s => ({...s, type: "series"}));
-    }
     
     // Appliquer le tri
     switch(sortBy) {

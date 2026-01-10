@@ -10,6 +10,7 @@ let films = [];
 let series = [];
 let watch = [];
 let editIndex = null;
+let tmdbSearchResults = [];
 
 /* ===== TMDB CONFIG ===== */
 const TMDB_API_KEY = "48bc790848498e462ccf3656b0656733";
@@ -661,6 +662,9 @@ window.searchTMDB = async function() {
             return;
         }
         
+        // Sauvegarder les résultats pour accès aux détails
+        tmdbSearchResults = allResults;
+        
         // Afficher les résultats
         resultsEl.innerHTML = `<div class="grid">` + allResults.map((item, idx) => {
             const isMovie = item.tmdb_type === "movie";
@@ -673,11 +677,11 @@ window.searchTMDB = async function() {
             const typeLabel = item.tmdb_type === "movie" ? "Film" : item.tmdb_type === "anime" ? "Animé" : "Série";
             
             return `
-            <div class="card">
-                <img src="${poster}" alt="${title}" style="width: 100%; height: 300px; object-fit: cover;">
+            <div class="card" style="cursor: pointer;">
+                <img src="${poster}" alt="${title}" style="width: 100%; height: 300px; object-fit: cover; cursor: pointer;" onclick="window.viewTMDBDetail(${idx})">
                 <div class="card-content">
                     <div class="card-type">${typeIcon} ${typeLabel}</div>
-                    <div class="card-title">${title}</div>
+                    <div class="card-title" style="cursor: pointer;" onclick="window.viewTMDBDetail(${idx})">${title}</div>
                     <div class="card-meta">📅 ${year}</div>
                     <div class="card-rating">${stars(Math.round(rating))}</div>
                     <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">Note: ${(rating * 2).toFixed(1)}/10</div>
@@ -721,6 +725,73 @@ window.addFromTMDB = function(idx, tmdbType, title, poster) {
     
     // Rediriger vers add.html
     window.location.href = "add.html";
+};
+
+window.viewTMDBDetail = async function(idx) {
+    const item = tmdbSearchResults[idx];
+    if(!item) return alert("Erreur: Élément non trouvé");
+    
+    const isMovie = item.tmdb_type === "movie";
+    const title = isMovie ? item.title : item.name;
+    const date = isMovie ? item.release_date : item.first_air_date;
+    const year = date ? date.split("-")[0] : "?";
+    const poster = item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : "https://via.placeholder.com/400x600";
+    
+    // Récupérer les informations détaillées
+    let detailData = {
+        title: title,
+        name: title,
+        year: year,
+        poster: poster,
+        type: item.tmdb_type,
+        overview: item.overview || "",
+        vote_average: item.vote_average || 0,
+        genres: item.genre_names || []
+    };
+
+    // Récupérer détails supplémentaires selon le type
+    try {
+        let detailResponse;
+        if(isMovie) {
+            detailResponse = await fetch(`${TMDB_BASE_URL}/movie/${item.id}?api_key=${TMDB_API_KEY}&language=fr-FR&append_to_response=credits`);
+        } else {
+            detailResponse = await fetch(`${TMDB_BASE_URL}/tv/${item.id}?api_key=${TMDB_API_KEY}&language=fr-FR&append_to_response=credits`);
+        }
+        
+        const details = await detailResponse.json();
+        
+        detailData.duration = details.runtime || details.episode_run_time?.[0] || null;
+        
+        // Récupérer les genres
+        if(details.genres) {
+            detailData.genres = details.genres.map(g => g.name);
+        }
+
+        // Récupérer la distribution
+        if(details.credits && details.credits.cast) {
+            detailData.cast = details.credits.cast.slice(0, 12).map(actor => ({
+                name: actor.name,
+                role: actor.character,
+                image: actor.profile_path ? `https://image.tmdb.org/t/p/w200${actor.profile_path}` : null
+            }));
+        }
+
+        // Récupérer le réalisateur
+        if(details.credits && details.credits.crew) {
+            const director = details.credits.crew.find(person => person.job === "Director");
+            if(director) {
+                detailData.director = director.name;
+            }
+        }
+    } catch(e) {
+        console.error("Erreur lors de la récupération des détails:", e);
+    }
+
+    // Sauvegarder dans localStorage
+    localStorage.setItem("tmdbDetail", JSON.stringify(detailData));
+    
+    // Rediriger vers la page de détails
+    window.location.href = "detail.html";
 };
 
 /* ===== INITIALISATION ===== */

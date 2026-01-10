@@ -24,6 +24,29 @@
     </div>
 </header>
 
+<!-- Auth Modal -->
+<div class="modal" id="authModal">
+    <div class="modal-content">
+        <button class="modal-close" onclick="window.closeAuthModal()">&times;</button>
+        <h2 id="authTitle">Se connecter</h2>
+        <div style="display: flex; gap: 12px; margin-bottom: 20px;">
+            <button class="tab-btn active" onclick="window.switchAuthTab('login')" style="flex: 1;">Connexion</button>
+            <button class="tab-btn" onclick="window.switchAuthTab('register')" style="flex: 1;">Inscription</button>
+        </div>
+        <div id="loginForm">
+            <input id="email" type="email" placeholder="Email" style="margin-bottom: 12px;">
+            <input id="pass" type="password" placeholder="Mot de passe" style="margin-bottom: 12px;">
+            <button class="btn-primary" onclick="window.login(document.getElementById('email').value, document.getElementById('pass').value)">Se connecter</button>
+        </div>
+        <div id="registerForm" style="display: none;">
+            <input id="emailReg" type="email" placeholder="Email" style="margin-bottom: 12px;">
+            <input id="passReg" type="password" placeholder="Mot de passe" style="margin-bottom: 12px;">
+            <input id="passRegConfirm" type="password" placeholder="Confirmer le mot de passe" style="margin-bottom: 12px;">
+            <button class="btn-primary" onclick="window.register(document.getElementById('emailReg').value, document.getElementById('passReg').value)">Créer un compte</button>
+        </div>
+    </div>
+</div>
+
 <main>
 <section>
     <h2>🔍 Recherche TMDB</h2>

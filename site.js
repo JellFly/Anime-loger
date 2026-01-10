@@ -10,11 +10,48 @@ let films = [];
 let series = [];
 let watch = [];
 let editIndex = null;
+let editingType = null;  // BUG FIX: Initialiser correctement
+let editingIndex = null;  // BUG FIX: Initialiser correctement
 let tmdbSearchResults = [];
+let tmdbCache = {};  // Cache local des infos TMDB
 
 /* ===== TMDB CONFIG ===== */
 const TMDB_API_KEY = "48bc790848498e462ccf3656b0656733";
 const TMDB_BASE_URL = "https://api.themoviedb.org/3";
+
+/* ===== TMDB CACHE & FETCHING ===== */
+window.getTMDBInfoById = async function(tmdbId, tmdbType) {
+    const cacheKey = `${tmdbType}_${tmdbId}`;
+    
+    // Vérifier le cache local d'abord
+    if(tmdbCache[cacheKey]) {
+        return tmdbCache[cacheKey];
+    }
+    
+    try {
+        const endpoint = tmdbType === 'movie' ? 'movie' : 'tv';
+        const response = await fetch(`${TMDB_BASE_URL}/${endpoint}/${tmdbId}?api_key=${TMDB_API_KEY}&language=fr-FR`);
+        const data = await response.json();
+        
+        const info = {
+            tmdbId: tmdbId,
+            tmdbType: tmdbType,
+            title: data.title || data.name,
+            image: data.poster_path ? `https://image.tmdb.org/t/p/w300${data.poster_path}` : "https://via.placeholder.com/400x600",
+            year: (data.release_date || data.first_air_date || "").split("-")[0],
+            overview: data.overview || ""
+        };
+        
+        // Mettre en cache
+        tmdbCache[cacheKey] = info;
+        localStorage.setItem("tmdbCache", JSON.stringify(tmdbCache));
+        
+        return info;
+    } catch(e) {
+        console.error(`Erreur récupération TMDB ${cacheKey}:`, e);
+        return null;
+    }
+};
 
 /* ===== FIREBASE LOADING ===== */
 window.loadProfilesFromFirebase = async function() {
@@ -31,6 +68,7 @@ window.loadProfilesFromFirebase = async function() {
             currentProfileIndex = data.currentProfileIndex || 0;
             console.log("Profils chargés depuis Firebase:", profiles);
         } else {
+            console.log("Aucune donnée Firebase, utilisation du localStorage");
             loadProfilesLocal();
         }
     } catch(e) {
@@ -58,6 +96,15 @@ function loadProfilesLocal() {
             watch: []
         });
     }
+    
+    // Charger le cache TMDB
+    const cachedTMDB = localStorage.getItem("tmdbCache");
+    if(cachedTMDB) {
+        tmdbCache = JSON.parse(cachedTMDB);
+        console.log("📦 Cache TMDB chargé:", Object.keys(tmdbCache).length, "entrées");
+    }
+    
+    console.log("💾 Profils chargés depuis localStorage");
 }
 
 /* ===== AUTH MODAL ===== */
@@ -162,7 +209,7 @@ window.switchType = function(type) {
 window.switchFilterType = function(type) {
     filterType = type;
     
-    // Update buttons
+    // BUG FIX #3: Mettre à jour les boutons tabs
     document.querySelectorAll(".type-tabs .tab-btn").forEach(btn => {
         btn.classList.remove("active");
         if(btn.dataset.type === type) btn.classList.add("active");
@@ -221,13 +268,18 @@ async function saveProfiles() {
                 profiles: profiles,
                 currentProfileIndex: currentProfileIndex
             });
-            console.log("Profils sauvegardés sur Firebase");
+            console.log("✅ Profils sauvegardés sur Firebase");
+            // Aussi sauvegarder en local comme backup
+            localStorage.setItem("profiles", JSON.stringify(profiles));
+            localStorage.setItem("currentProfileIndex", JSON.stringify(currentProfileIndex));
         } catch(e) {
-            console.error("Erreur sauvegarde Firebase:", e);
+            console.error("❌ Erreur sauvegarde Firebase:", e);
+            console.log("💾 Sauvegarde en cours sur localStorage (backup)");
             localStorage.setItem("profiles", JSON.stringify(profiles));
             localStorage.setItem("currentProfileIndex", JSON.stringify(currentProfileIndex));
         }
     } else {
+        console.log("🔒 Utilisateur non connecté - sauvegarde en localStorage uniquement");
         localStorage.setItem("profiles", JSON.stringify(profiles));
         localStorage.setItem("currentProfileIndex", JSON.stringify(currentProfileIndex));
     }
@@ -332,10 +384,11 @@ const saveData = async () => {
 
 function loadEditingData() {
     const editingItem = localStorage.getItem("editingItem");
-    const editingType = localStorage.getItem("editingType");
-    const editingIndex = localStorage.getItem("editingIndex");
+    const storedEditingType = localStorage.getItem("editingType");
+    const storedEditingIndex = localStorage.getItem("editingIndex");
     
-    if(editingItem && editingType !== null && editingIndex !== null) {
+    // BUG FIX #1: Vérifier que editingIndex n'est pas une chaîne vide et peut être parsée
+    if(editingItem && storedEditingType !== null && storedEditingIndex !== null && storedEditingIndex !== "") {
         const item = JSON.parse(editingItem);
         const titleEl = document.getElementById("title");
         const imageEl = document.getElementById("image");
@@ -350,9 +403,10 @@ function loadEditingData() {
         if(commentEl) commentEl.value = item.comment;
         
         // Sauvegarder les infos d'édition dans les variables globales
-        window.editingType = editingType;
-        window.editingIndex = parseInt(editingIndex);
-        editIndex = parseInt(editingIndex);
+        // BUG FIX #5: Stocker les valeurs correctement
+        editingType = storedEditingType;
+        editingIndex = parseInt(storedEditingIndex);
+        editIndex = parseInt(storedEditingIndex);
     }
 }
 
@@ -370,11 +424,25 @@ async function saveItem() {
         image: imageEl ? imageEl.value || "https://via.placeholder.com/400x600" : "https://via.placeholder.com/400x600",
         rating: ratingEl ? parseFloat(ratingEl.value) || 1 : 1,
         date: dateEl ? dateEl.value : "",
-        comment: commentEl ? commentEl.value : ""
+        comment: commentEl ? commentEl.value : "",
+        liked: false,
+        watched: false
     };
     
+    // Vérifier si on a les infos TMDB dans le localStorage (vient de la recherche)
+    const editingItemStr = localStorage.getItem("editingItem");
+    if(editingItemStr) {
+        const editingItem = JSON.parse(editingItemStr);
+        // Si l'item vient de TMDB, garder les ID TMDB
+        if(editingItem.tmdbId && editingItem.tmdbType) {
+            item.tmdbId = editingItem.tmdbId;
+            item.tmdbType = editingItem.tmdbType;
+        }
+    }
+    
     // Déterminer le type à utiliser (edit type ou current type)
-    const typeToUse = window.editingType || currentType;
+    // BUG FIX #5: Utiliser la variable globale editingType au lieu de window.editingType
+    const typeToUse = editingType || currentType;
     const currentList = typeToUse === "animes" ? animes : typeToUse === "films" ? films : series;
     
     const isNewItem = editIndex === null;
@@ -386,8 +454,8 @@ async function saveItem() {
     }
     
     editIndex = null;
-    window.editingType = null;
-    window.editingIndex = null;
+    editingType = null;  // BUG FIX #5: Réinitialiser correctement la variable globale
+    editingIndex = null;  // BUG FIX #5: Réinitialiser correctement la variable globale
 
     if(titleEl) titleEl.value = "";
     if(imageEl) imageEl.value = "";
@@ -447,10 +515,46 @@ async function addWatch() {
 }
 
 async function watchToAnime(i) {
-    const titleEl = document.getElementById("title");
-    if(titleEl) titleEl.value = watch[i];
-    watch.splice(i,1);
+    // Demander le type de contenu
+    const type = prompt("Quel type de contenu ?\n(animes, films, series)") || "films";
+    
+    if(!["animes", "films", "series"].includes(type)) {
+        alert("Type invalide. Utilisation de 'films' par défaut.");
+        return;
+    }
+    
+    const title = watch[i];
+    if(!title) return;
+    
+    // Créer l'item
+    const item = {
+        title: title,
+        image: "https://via.placeholder.com/400x600",
+        rating: 0,
+        date: new Date().toISOString().split("T")[0],
+        comment: "",
+        liked: false
+    };
+    
+    // Ajouter à la bonne liste
+    const currentProfile = profiles[currentProfileIndex];
+    if(currentProfile) {
+        const targetList = type === "animes" ? currentProfile.animes : type === "films" ? currentProfile.films : currentProfile.series;
+        
+        // Vérifier si n'existe pas déjà
+        const exists = targetList.find(a => a.title === title);
+        if(!exists) {
+            targetList.push(item);
+        }
+    }
+    
+    // Supprimer de la watchlist
+    watch.splice(i, 1);
+    
+    // Sauvegarder
     await saveData();
+    
+    alert(`"${title}" ajouté à votre bibliothèque !`);
     render();
 }
 
@@ -567,6 +671,18 @@ function updateStats() {
 }
 
 /* ===== RENDER ===== */
+// Fonction pour enrichir un item avec les infos TMDB si nécessaire
+async function enrichItemWithTMDB(item) {
+    if(item.tmdbId && item.tmdbType && !item.image) {
+        const tmdbInfo = await window.getTMDBInfoById(item.tmdbId, item.tmdbType);
+        if(tmdbInfo) {
+            item.title = tmdbInfo.title;
+            item.image = tmdbInfo.image;
+        }
+    }
+    return item;
+}
+
 function render() {
     if(animeListEl) {
         const searchEl = document.getElementById("search");
@@ -592,6 +708,32 @@ function render() {
         const favoritesSection = document.getElementById("favoritesSection");
         if(favoritesSection && isListPage && filterType === "favoris") {
             favoritesSection.style.display = "block";
+            
+            // BUG FIX #6: Remplir la section des favoris avec les items likes
+            const favList = document.getElementById("favoritesList");
+            if(favList) {
+                const favorites = getFilteredAndSortedItems().filter(a => a.liked);
+                favList.innerHTML = favorites
+                    .map((a, i) => {
+                        const typeLabel = a.type === "animes" ? "🎌" : a.type === "films" ? "🎬" : "📺";
+                        const typeName = a.type === "animes" ? "Animé" : a.type === "films" ? "Film" : "Série";
+                        return `
+                    <div class="card">
+                        <img src="${a.image}" alt="${a.title}">
+                        <div class="card-content">
+                            <div class="card-type">${typeLabel} ${typeName}</div>
+                            <div class="card-title">❤️ ${a.title}</div>
+                            <div class="card-rating">${stars(Math.round(a.rating))}</div>
+                            ${a.rating > 0 ? `<div style="font-size: 12px; color: var(--text-muted);">Votre note: ${a.rating}/5</div>` : ""}
+                            <div class="card-meta">📅 ${a.date || "?"}</div>
+                            <div class="card-comment">${a.comment || ""}</div>
+                        </div>
+                    </div>`;
+                    }).join("");
+            }
+            
+            const countFav = document.getElementById("countFavorites");
+            if(countFav) countFav.textContent = getFilteredAndSortedItems().filter(a => a.liked).length;
         } else if(favoritesSection) {
             favoritesSection.style.display = "none";
         }
@@ -603,11 +745,21 @@ function render() {
                 const heartIcon = a.liked ? "❤️" : "";
                 
                 // Trouver l'index réel dans le tableau original
+                // BUG FIX #2: Utiliser une comparaison plus fiable basée sur plusieurs propriétés
                 let realIndex = i;
                 if(isListPage) {
                     // Sur la page list, on doit trouver l'index dans le tableau d'origine
                     const originalList = a.type === "animes" ? animes : a.type === "films" ? films : series;
-                    realIndex = originalList.findIndex(item => item.title === a.title && item.date === a.date);
+                    // Comparer par titre + image + rating (plus unique) au lieu de titre + date
+                    realIndex = originalList.findIndex(item => item.title === a.title && item.image === a.image && item.rating === a.rating);
+                    // Si toujours pas trouvé, essayer juste le titre
+                    if(realIndex === -1) {
+                        realIndex = originalList.findIndex(item => item.title === a.title);
+                    }
+                    // Si toujours -1, utiliser l'index local en dernier recours
+                    if(realIndex === -1) {
+                        realIndex = i;
+                    }
                 }
                 
                 return `
@@ -762,22 +914,38 @@ window.addFromTMDB = function(idx, tmdbType, title, poster) {
     };
     const cinetype = typeMap[tmdbType];
     
-    // Créer l'item
+    // Récupérer l'ID TMDB depuis les résultats
+    const tmdbItem = tmdbSearchResults[idx];
+    const tmdbId = tmdbItem ? tmdbItem.id : null;
+    
+    // Créer l'item avec ID TMDB (structure nouvelle)
     const item = {
+        tmdbId: tmdbId,
+        tmdbType: tmdbType,
         title: title,
         image: poster,
         rating: 3,
         date: new Date().toISOString().split("T")[0],
-        comment: ""
+        comment: "",
+        liked: false,
+        watched: false
     };
     
-    // Sauvegarder dans localStorage
-    localStorage.setItem("editingItem", JSON.stringify(item));
-    localStorage.setItem("editingType", cinetype);
-    localStorage.setItem("editingIndex", "");
-    
-    // Rediriger vers add.html
-    window.location.href = "add.html";
+    // Ajouter directement à la bibliothèque (plus de redirection vers add.html)
+    const currentProfile = profiles[currentProfileIndex];
+    if(currentProfile) {
+        const targetList = cinetype === "animes" ? currentProfile.animes : cinetype === "films" ? currentProfile.films : currentProfile.series;
+        
+        // Vérifier que le film n'existe pas déjà
+        const exists = targetList.find(a => a.title === title);
+        if(!exists) {
+            targetList.push(item);
+            saveData();
+            alert(`"${title}" ajouté à votre bibliothèque !`);
+        } else {
+            alert(`"${title}" est déjà dans votre bibliothèque !`);
+        }
+    }
 };
 
 window.viewTMDBDetail = async function(idx) {
@@ -864,6 +1032,17 @@ setTimeout(() => {
     if(typeButtons.length > 0) {
         // On est sur add.html - initialiser le premier type (animé)
         window.switchType("animes");
+        
+        // BUG FIX #4: Effacer les données d'édition si on quitte add.html sans sauvegarder
+        window.addEventListener('beforeunload', function() {
+            const titleEl = document.getElementById("title");
+            if(titleEl && !titleEl.value) {
+                // Formulaire vide = pas de sauvegarde, nettoyer
+                localStorage.removeItem("editingItem");
+                localStorage.removeItem("editingType");
+                localStorage.removeItem("editingIndex");
+            }
+        });
     }
     
     // Charger les filtres depuis les éléments si présents

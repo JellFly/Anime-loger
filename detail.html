@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Anime Tracker - Détails</title>
+    <title>CineNote - Détails</title>
     <link rel="stylesheet" href="style.css">
     <style>
         .detail-header {
@@ -298,11 +298,10 @@
 
 <header>
     <div>
-        <h1>🎬 Anime Tracker</h1>
+        <h1>🎬 CineNote</h1>
     </div>
     <nav>
         <a href="index.html">Accueil</a>
-        <a href="add.html">Ajouter</a>
         <a href="search.html">🔍 Recherche</a>
         <a href="list.html">Ma Bibliothèque</a>
         <a href="watchlist.html">⏳ Watchlist</a>
@@ -408,16 +407,12 @@
                 </div>
 
                 <div class="action-box-btn">
-                    <button onclick="window.showActivity()">📊 Voir l'activité</button>
+                    <button onclick="window.addToLibraryFromDetail()" style="background: rgba(99, 102, 241, 0.3); border-color: var(--primary); color: var(--primary); font-weight: 600;">➕ Ajouter à ma bibliothèque</button>
                     <button onclick="window.openReview()">📝 Ajouter un avis</button>
-                    <button onclick="window.addToLists()">📋 Ajouter aux listes</button>
                 </div>
             </div>
 
-            <div class="detail-actions">
-                <button class="btn-primary" onclick="window.addToLibraryFromDetail()">➕ Ajouter à ma bibliothèque</button>
-                <button class="btn-secondary" onclick="window.addToWatchlist()">⏳ Ajouter à la watchlist</button>
-            </div>
+
         </div>
     </div>
 
@@ -541,19 +536,45 @@
         const detail = JSON.parse(localStorage.getItem("tmdbDetail"));
         if(!detail) return alert("Erreur: Données manquantes");
 
+        const type = detail.type === 'movie' ? 'films' : detail.type === 'anime' ? 'animes' : 'series';
         const item = {
+            tmdbId: detail.tmdbId,
+            tmdbType: detail.type,
             title: detail.title || detail.name,
             image: detail.poster || 'https://via.placeholder.com/400x600',
             rating: 3,
             date: new Date().toISOString().split("T")[0],
-            comment: ""
+            comment: "",
+            liked: false,
+            watched: false
         };
 
-        localStorage.setItem("editingItem", JSON.stringify(item));
-        localStorage.setItem("editingType", detail.type === 'movie' ? 'films' : detail.type === 'anime' ? 'animes' : 'series');
-        localStorage.setItem("editingIndex", "");
-
-        window.location.href = "add.html";
+        // Ajouter directement à la bibliothèque
+        if(!window.profiles) {
+            window.profiles = JSON.parse(localStorage.getItem("profiles")) || [];
+            window.currentProfileIndex = JSON.parse(localStorage.getItem("currentProfileIndex")) || 0;
+        }
+        
+        if(window.profiles && window.profiles.length > 0) {
+            const profile = window.profiles[window.currentProfileIndex || 0];
+            if(profile) {
+                const targetList = type === 'animes' ? profile.animes : type === 'films' ? profile.films : profile.series;
+                
+                // Vérifier que le film n'existe pas déjà
+                const exists = targetList.find(a => a.title === item.title);
+                if(!exists) {
+                    targetList.push(item);
+                    if(window.saveProfiles) {
+                        window.saveProfiles();
+                    } else {
+                        localStorage.setItem("profiles", JSON.stringify(window.profiles));
+                    }
+                    alert(`"${item.title}" ajouté à votre bibliothèque !`);
+                } else {
+                    alert(`"${item.title}" est déjà dans votre bibliothèque !`);
+                }
+            }
+        }
     };
 
     window.addToWatchlist = function() {
@@ -562,6 +583,12 @@
 
         const title = detail.title || detail.name;
         
+        // Charger les profils si nécessaire
+        if(!window.profiles) {
+            window.profiles = JSON.parse(localStorage.getItem("profiles")) || [];
+            window.currentProfileIndex = JSON.parse(localStorage.getItem("currentProfileIndex")) || 0;
+        }
+        
         // Charger les profils et ajouter à la watchlist
         if(window.profiles && window.profiles.length > 0) {
             const profile = window.profiles[window.currentProfileIndex || 0];
@@ -569,7 +596,11 @@
                 profile.watch = profile.watch || [];
                 if(!profile.watch.includes(title)) {
                     profile.watch.push(title);
-                    window.saveProfiles();
+                    if(window.saveProfiles) {
+                        window.saveProfiles();
+                    } else {
+                        localStorage.setItem("profiles", JSON.stringify(window.profiles));
+                    }
                     alert(`"${title}" a été ajouté à votre watchlist !`);
                 } else {
                     alert(`"${title}" est déjà dans votre watchlist`);
@@ -580,7 +611,7 @@
 
     window.toggleWatched = async function() {
         const detail = JSON.parse(localStorage.getItem("tmdbDetail"));
-        if(!detail) return;
+        if(!detail) return alert("Erreur: Données manquantes");
 
         const currentDetail = detail.title || detail.name;
         const state = window.getDetailStateFromFirebase(currentDetail);
@@ -593,33 +624,52 @@
         if(state.watched) {
             const type = detail.type === 'movie' ? 'films' : detail.type === 'anime' ? 'animes' : 'series';
             const item = {
+                tmdbId: detail.tmdbId,
+                tmdbType: detail.type,
                 title: currentDetail,
                 image: detail.poster || 'https://via.placeholder.com/400x600',
                 rating: state.rating || 0,
                 date: new Date().toISOString().split("T")[0],
-                comment: state.review || ""
+                comment: state.review || "",
+                liked: state.liked || false,
+                watched: true
             };
+            
+            // Charger les profils et ajouter
+            if(!window.profiles) {
+                window.profiles = JSON.parse(localStorage.getItem("profiles")) || [];
+                window.currentProfileIndex = JSON.parse(localStorage.getItem("currentProfileIndex")) || 0;
+            }
             
             if(window.profiles && window.profiles.length > 0) {
                 const profile = window.profiles[window.currentProfileIndex || 0];
                 if(profile) {
                     const arr = type === 'animes' ? profile.animes : type === 'films' ? profile.films : profile.series;
-                    if(!arr.find(a => a.title === currentDetail)) {
+                    // Vérifier que le film n'existe pas déjà
+                    const exists = arr.find(a => a.title === currentDetail);
+                    if(!exists) {
                         arr.push(item);
-                        await window.saveProfiles();
+                        if(window.saveProfiles) {
+                            await window.saveProfiles();
+                        } else {
+                            localStorage.setItem("profiles", JSON.stringify(window.profiles));
+                        }
                     }
+                    alert(`"${currentDetail}" ajouté à votre bibliothèque !`);
                 }
             }
+        } else {
+            const btn = document.querySelector('[onclick="window.toggleWatched()"]');
+            if(btn) {
+                btn.style.color = 'var(--text-muted)';
+                document.getElementById('watchedText').textContent = 'Regardé';
+            }
         }
-        
-        const btn = event.target.closest('.action-icon-btn');
-        btn.style.color = state.watched ? 'var(--primary)' : 'var(--text-muted)';
-        document.getElementById('watchedText').textContent = state.watched ? '✓ Regardé' : 'Regardé';
     };
 
     window.toggleLike = async function() {
         const detail = JSON.parse(localStorage.getItem("tmdbDetail"));
-        if(!detail) return;
+        if(!detail) return alert("Erreur: Données manquantes");
 
         const currentDetail = detail.title || detail.name;
         const state = window.getDetailStateFromFirebase(currentDetail);
@@ -640,25 +690,37 @@
                 liked: true
             };
             
+            // Charger les profils et ajouter
+            if(!window.profiles) {
+                window.profiles = JSON.parse(localStorage.getItem("profiles")) || [];
+                window.currentProfileIndex = JSON.parse(localStorage.getItem("currentProfileIndex")) || 0;
+            }
+            
             if(window.profiles && window.profiles.length > 0) {
                 const profile = window.profiles[window.currentProfileIndex || 0];
                 if(profile) {
                     const arr = type === 'animes' ? profile.animes : type === 'films' ? profile.films : profile.series;
-                    if(!arr.find(a => a.title === currentDetail)) {
+                    const exists = arr.find(a => a.title === currentDetail);
+                    if(exists) {
+                        exists.liked = true;
+                    } else {
                         arr.push(item);
+                    }
+                    if(window.saveProfiles) {
                         await window.saveProfiles();
                     } else {
-                        const existingItem = arr.find(a => a.title === currentDetail);
-                        existingItem.liked = true;
-                        await window.saveProfiles();
+                        localStorage.setItem("profiles", JSON.stringify(window.profiles));
                     }
+                    alert(`"${currentDetail}" ajouté à vos favoris !`);
                 }
             }
+        } else {
+            const btn = document.querySelector('[onclick="window.toggleLike()"]');
+            if(btn) {
+                btn.style.color = 'var(--text-muted)';
+                btn.innerHTML = '🤍<span id="likeText">J\'aime</span>';
+            }
         }
-        
-        const btn = event.target.closest('.action-icon-btn');
-        btn.style.color = state.liked ? 'var(--primary)' : 'var(--text-muted)';
-        btn.innerHTML = (state.liked ? '❤️' : '🤍') + '<span id="likeText">J\'aime</span>';
     };
 
     window.setUserRating = async function(stars) {
@@ -672,6 +734,12 @@
         // Sauvegarder sur Firebase
         await window.saveDetailStateToFirebase(currentDetail, state);
 
+        // Charger les profils et mettre à jour la note
+        if(!window.profiles) {
+            window.profiles = JSON.parse(localStorage.getItem("profiles")) || [];
+            window.currentProfileIndex = JSON.parse(localStorage.getItem("currentProfileIndex")) || 0;
+        }
+        
         // Mettre à jour la note dans la bibliothèque si le film y est
         const type = detail.type === 'movie' ? 'films' : detail.type === 'anime' ? 'animes' : 'series';
         if(window.profiles && window.profiles.length > 0) {
@@ -681,7 +749,11 @@
                 const existingItem = arr.find(a => a.title === currentDetail);
                 if(existingItem) {
                     existingItem.rating = stars;
-                    await window.saveProfiles();
+                    if(window.saveProfiles) {
+                        await window.saveProfiles();
+                    } else {
+                        localStorage.setItem("profiles", JSON.stringify(window.profiles));
+                    }
                 }
             }
         }
@@ -713,6 +785,12 @@
         // Sauvegarder sur Firebase
         await window.saveDetailStateToFirebase(currentDetail, state);
 
+        // Charger les profils si nécessaire
+        if(!window.profiles) {
+            window.profiles = JSON.parse(localStorage.getItem("profiles")) || [];
+            window.currentProfileIndex = JSON.parse(localStorage.getItem("currentProfileIndex")) || 0;
+        }
+
         // Mettre à jour la comment dans la bibliothèque
         const type = detail.type === 'movie' ? 'films' : detail.type === 'anime' ? 'animes' : 'series';
         if(window.profiles && window.profiles.length > 0) {
@@ -722,7 +800,11 @@
                 const existingItem = arr.find(a => a.title === currentDetail);
                 if(existingItem) {
                     existingItem.comment = reviewText;
-                    await window.saveProfiles();
+                    if(window.saveProfiles) {
+                        await window.saveProfiles();
+                    } else {
+                        localStorage.setItem("profiles", JSON.stringify(window.profiles));
+                    }
                 } else {
                     // Créer un nouvel item avec le review
                     const newItem = {
@@ -733,7 +815,11 @@
                         comment: reviewText
                     };
                     arr.push(newItem);
-                    await window.saveProfiles();
+                    if(window.saveProfiles) {
+                        await window.saveProfiles();
+                    } else {
+                        localStorage.setItem("profiles", JSON.stringify(window.profiles));
+                    }
                 }
             }
         }

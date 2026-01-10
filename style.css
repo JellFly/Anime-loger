@@ -144,7 +144,7 @@ input, textarea, select {
     border-radius: 8px;
     border: 1px solid var(--border);
     background: var(--bg-lighter);
-    color: var(--text);
+    color: #0f172a(--text);
     font-size: 14px;
     font-family: inherit;
     transition: all 0.3s;

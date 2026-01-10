@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Anime Tracker - Accueil</title>
+    <title>CineNote - Accueil</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <script type="module">
@@ -20,12 +20,19 @@ const firebaseConfig = {
   appId: "1:424542474390:web:2c28714a4c4f0178daf2b7"
 };
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+try {
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
 
-window.auth = auth;
-window.db = db;
+  window.auth = auth;
+  window.db = db;
+  console.log("✅ Firebase initialisé avec succès");
+} catch(e) {
+  console.error("❌ Erreur initialisation Firebase:", e);
+  window.auth = null;
+  window.db = null;
+}
 
 window.register = async function(email, password) {
   try {
@@ -125,11 +132,10 @@ onAuthStateChanged(auth, (user) => {
 
 <header>
     <div>
-        <h1>🎬 Anime Tracker</h1>
+        <h1>🎬 CineNote</h1>
     </div>
     <nav>
         <a href="index.html">Accueil</a>
-        <a href="add.html">Ajouter</a>
         <a href="search.html">🔍 Recherche</a>
         <a href="list.html">Ma Bibliothèque</a>
         <a href="watchlist.html">⏳ Watchlist</a>
@@ -183,7 +189,7 @@ onAuthStateChanged(auth, (user) => {
 
 <main>
 <section class="text-center">
-    <h2>👋 Bienvenue dans Anime Tracker</h2>
+    <h2>👋 Bienvenue sur CineNote</h2>
     <p style="color: var(--text-muted); font-size: 16px; margin: 16px 0;">Organisez et suivez vos animés, films et séries préférés</p>
     
     <div class="stats">
@@ -200,15 +206,15 @@ onAuthStateChanged(auth, (user) => {
             <div class="stat-number" id="statSeries">0</div>
         </div>
         <div class="stat-box">
-            <div class="stat-label">Watchlist</div>
-            <div class="stat-number" id="statWatch">0</div>
+            <div class="stat-label">Total regardé</div>
+            <div class="stat-number" id="statGrandTotal">0</div>
         </div>
     </div>
 
     <div class="stats" style="margin-top: 30px;">
         <div class="stat-box">
-            <div class="stat-label">Total regardé</div>
-            <div class="stat-number" id="statGrandTotal">0</div>
+            <div class="stat-label">Watchlist</div>
+            <div class="stat-number" id="statWatch">0</div>
         </div>
         <div class="stat-box">
             <div class="stat-label">Note moyenne</div>

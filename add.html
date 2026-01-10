@@ -3,14 +3,134 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Anime Tracker - Ajouter</title>
+    <title>CineNote - Ajouter</title>
     <link rel="stylesheet" href="style.css">
 </head>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDWbsbfnF5e-E3rCMguVFF69PpAM-ZlAZ4",
+  authDomain: "anime-lo.firebaseapp.com",
+  projectId: "anime-lo",
+  storageBucket: "anime-lo.firebasestorage.app",
+  messagingSenderId: "424542474390",
+  appId: "1:424542474390:web:2c28714a4c4f0178daf2b7"
+};
+
+try {
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  window.auth = auth;
+  window.db = db;
+  console.log("✅ Firebase initialisé");
+
+  window.register = async function(email, password) {
+    try {
+      await createUserWithEmailAndPassword(auth, email, password);
+      try {
+        await setDoc(doc(db, "users", auth.currentUser.uid), {
+          profiles: [{
+            name: "Profil 1",
+            avatar: "https://via.placeholder.com/100",
+            bio: "",
+            animes: [],
+            films: [],
+            series: [],
+            watch: []
+          }],
+          currentProfileIndex: 0
+        });
+      } catch(dbError) {
+        console.log("Firebase Firestore indisponible, utilisation du stockage local");
+        localStorage.setItem("profiles", JSON.stringify([{
+          name: "Profil 1",
+          avatar: "https://via.placeholder.com/100",
+          bio: "",
+          animes: [],
+          films: [],
+          series: [],
+          watch: []
+        }]));
+        localStorage.setItem("currentProfileIndex", "0");
+      }
+      alert("Compte créé ! Veuillez compléter votre profil.");
+      window.closeAuthModal();
+      window.location.href = "profile-setup.html";
+    } catch(e) {
+      alert("Erreur: " + e.message);
+    }
+  };
+
+  window.login = async function(email, password) {
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      alert("Connecté !");
+      window.closeAuthModal();
+      if(window.loadProfilesFromFirebase) window.loadProfilesFromFirebase();
+    } catch(e) {
+      alert("Erreur: " + e.message);
+    }
+  };
+
+  window.logout = async function() {
+    try {
+      await signOut(auth);
+      alert("Déconnecté");
+      window.updateAuthIcon();
+    } catch(e) {
+      alert("Erreur: " + e.message);
+    }
+  };
+
+  window.loadUserData = async function() {
+    if(!auth.currentUser) {
+      console.log("Utilisateur non connecté");
+      return;
+    }
+    try {
+      const ref = doc(db, "users", auth.currentUser.uid);
+      const snap = await getDoc(ref);
+      if(snap.exists()) {
+        window.userDataFromFirebase = snap.data();
+        console.log("Données chargées:", window.userDataFromFirebase);
+        if(window.loadProfilesFromFirebase) window.loadProfilesFromFirebase();
+      }
+    } catch(e) {
+      console.error("Erreur chargement:", e);
+    }
+  };
+
+  onAuthStateChanged(auth, (user) => {
+    if(user) {
+      console.log("Utilisateur connecté:", user.email);
+      window.loadUserData();
+      window.updateAuthIcon();
+    } else {
+      console.log("Utilisateur déconnecté");
+      window.updateAuthIcon();
+      setTimeout(() => {
+        if(window.loadProfilesFromFirebase) {
+          window.loadProfilesFromFirebase();
+        }
+      }, 500);
+    }
+  });
+} catch(e) {
+  console.error("❌ Erreur Firebase:", e);
+  window.auth = null;
+  window.db = null;
+}
+</script>
 <body>
 
 <header>
     <div>
-        <h1>🎬 Anime Tracker</h1>
+        <h1>🎬 CineNote</h1>
     </div>
     <nav>
         <a href="index.html">Accueil</a>

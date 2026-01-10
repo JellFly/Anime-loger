@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+import { initializeApp, getApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
 import { getFirestore, doc, setDoc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 
@@ -21,7 +21,12 @@ const firebaseConfig = {
 };
 
 try {
-  const app = initializeApp(firebaseConfig);
+  let app;
+  try {
+    app = getApp();
+  } catch(e) {
+    app = initializeApp(firebaseConfig);
+  }
   const auth = getAuth(app);
   const db = getFirestore(app);
 
